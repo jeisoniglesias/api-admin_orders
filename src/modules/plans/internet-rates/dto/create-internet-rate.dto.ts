@@ -8,4 +8,6 @@ export class CreateInternetRateDto {
     message: `Nombre es requerido`,
   })
   name: string;
+
+  
 }

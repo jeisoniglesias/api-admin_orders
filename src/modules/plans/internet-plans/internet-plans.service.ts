@@ -47,7 +47,7 @@ export class InternetPlansService {
       Resp.Error('CONFLICT', `Ya existe un plan con el nombre ${name}.`);
     }
   }
-  
+
   private async ValidateTarifa(tarifa: number) {
     const existingTarifa = await this.tarifasRepository.findOneBy({
       id: tarifa,
@@ -57,10 +57,22 @@ export class InternetPlansService {
     }
     return existingTarifa;
   }
-  //-------------------------------------------------------------------------------------------
+  async getTarifas(): Promise<InternetRate[]> {
+    const tarifas = await this.tarifasRepository.find();
+    if (tarifas.length === 0) {
+      Resp.Error('NOT_FOUND', 'No se encontraron tarifas');
+    }
+    return tarifas;
+  }
+
+  //--------------------------------------------------------------------------
   async create(
     createInternetPlanDto: CreateInternetPlanDto,
   ): Promise<InternetPlan> {
+    console.log('crear plan');
+
+    console.log(createInternetPlanDto);
+
     const { tarifa: tarifaId, name, ...rest } = createInternetPlanDto;
     await this.ValidateName(name);
 
@@ -75,8 +87,10 @@ export class InternetPlansService {
   }
 
   async findAll(): Promise<InternetPlan[] | InternetPlan> {
-    const planesInternet = await this.findPlanesInternetAllOrOne();
-    if (!planesInternet) {
+    const planesInternet = await this.planesInternetRepository.find({
+      relations: ['tarifa'],
+    });
+    if (planesInternet.length === 0) {
       Resp.Error('NOT_FOUND', 'No se encontraron planes de internet');
     }
     return planesInternet;
@@ -86,7 +100,10 @@ export class InternetPlansService {
     console.log('id plan', id);
 
     try {
-      return await this.planesInternetRepository.findOneByOrFail({ id });
+      return await this.planesInternetRepository.findOneOrFail({
+        where: { id },
+        relations: ['tarifa'],
+      });
     } catch (error) {
       Resp.Error('NOT_FOUND', `No se encontro plan de internet con id: ${id}`);
     }
@@ -99,27 +116,33 @@ export class InternetPlansService {
     return planInternet; */
   }
 
-  async update(id: number, updateInternetPlanDto: UpdateInternetPlanDto) {
-    try {
-      const plan = await this.planesInternetRepository.findOneOrFail({
+  async update(
+    id: number,
+    updateInternetPlanDto: UpdateInternetPlanDto,
+  ): Promise<InternetPlan> {
+    console.log(await this.findOne(id));
+
+    // try {
+    const plan = await this.findOne(id);
+    /*  await this.planesInternetRepository.findOneOrFail({
         where: { id },
         relations: ['tarifa'],
         withDeleted: true,
-      });
+      }); */
 
-      const { tarifa: tarifaId, name, ...rest } = updateInternetPlanDto;
-      await this.ValidateName(name);
-      const tarifa = await this.ValidateTarifa(tarifaId);
+    const { tarifa: tarifaId, name, ...rest } = updateInternetPlanDto;
+    await this.ValidateName(name, id);
+    const tarifa = await this.ValidateTarifa(tarifaId);
 
-      this.planesInternetRepository.merge(plan, { ...rest, tarifa });
+    this.planesInternetRepository.merge(plan, { ...rest, tarifa });
 
-      return await this.planesInternetRepository.save(plan);
-    } catch (error) {
+    return await this.planesInternetRepository.save(plan);
+    /* } catch (error) {
       Resp.Error('NOT_FOUND', `No se encontro plan de internet con id: ${id}`);
-    }
+    } */
   }
 
-  async remove(id: number) {
+  async remove(id: number): Promise<InternetPlan> {
     try {
       const plan: InternetPlan =
         await this.planesInternetRepository.findOneByOrFail({ id });

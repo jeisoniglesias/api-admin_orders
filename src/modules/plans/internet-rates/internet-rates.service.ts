@@ -32,7 +32,9 @@ export class InternetRatesService {
   }
 
   async findAll(): Promise<InternetRate[]> {
-    const tarifas: InternetRate[] = await this.tarifasRepository.find();
+    const tarifas: InternetRate[] = await this.tarifasRepository.find({
+      relations: ['planes'],
+    });
     if (tarifas.length === 0) {
       Resp.Error('NOT_FOUND', 'No se encontraron tarifas');
     }
@@ -41,7 +43,10 @@ export class InternetRatesService {
 
   async findOne(id: number): Promise<InternetRate> {
     try {
-      return await this.tarifasRepository.findOneByOrFail({ id });
+      return await this.tarifasRepository.findOneOrFail({
+        where: { id },
+        relations: ['planes'],
+      });
     } catch (error) {
       Resp.Error('NOT_FOUND', `No se encontro tarifa con id: ${id}`);
     }

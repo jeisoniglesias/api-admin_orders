@@ -12,10 +12,20 @@ import { CreateInternetPlanDto } from './dto/create-internet-plan.dto';
 import { UpdateInternetPlanDto } from './dto/update-internet-plan.dto';
 import { InternetPlan } from './entities/internet-plan.entity';
 import { Resp } from 'src/utils';
+import { InternetRate } from '../internet-rates/entities/internet-rate.entity';
 
 @Controller('internet-plans')
 export class InternetPlansController {
   constructor(private readonly internetPlansService: InternetPlansService) {}
+  @Get('tarifas')
+  async getTarifas() {
+    const tarifas: InternetRate[] =
+      await this.internetPlansService.getTarifas();
+    const message = Array.isArray(tarifas)
+      ? `Total de tarifas: ${tarifas.length}`
+      : 'Tarifa encontrada';
+    return Resp.Success<InternetRate[] | InternetPlan>(tarifas, 'OK', message);
+  }
 
   @Post()
   async create(@Body() createInternetPlanDto: CreateInternetPlanDto) {
